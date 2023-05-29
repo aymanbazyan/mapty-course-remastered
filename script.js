@@ -78,7 +78,13 @@ class Cycling extends Workout {
 //const run1 = new Running([39, -12], 5.2, 25, 140);
 //const cycle1 = new Cycling([39, -12], 27, 95, 540);
 
-let map, mapEvent, sortCondition, markerGroup, workIndex;
+let map,
+  mapEvent,
+  sortCondition,
+  markerGroup,
+  workIndex,
+  curWorkDelete,
+  curElementDelete;
 
 //////////////////////////////////////////////
 // APPLICATION ARCHITECTURE
@@ -89,6 +95,8 @@ class App {
   #workouts = [];
   #markerGroup = [];
   #workIndex;
+  #curWorkDelete;
+  #curElementDelete;
 
   // We call it when the page loads:
   constructor() {
@@ -107,7 +115,8 @@ class App {
     deleteAll.addEventListener("click", this._deleteAll.bind(this));
     logo.addEventListener("click", this._hideForm);
 
-    window.addEventListener("load", this._delete.bind(this));
+    window.addEventListener("load", this._setDeleteButtons.bind(this));
+
     window.addEventListener("load", this._edit.bind(this));
   }
 
@@ -258,7 +267,7 @@ class App {
     //console.log(this.#workouts);
     //console.log(JSON.stringify(this.#workouts));
 
-    this._delete();
+    this._setDeleteButtons();
     this._edit();
   }
 
@@ -422,52 +431,56 @@ class App {
     workoutsContainer.innerHTML = "";
   }
 
-  _delete() {
-    this.deleteBtn = document.querySelectorAll(".workout__btn-delete");
+  /////// Delete button
+  _setDeleteButtons() {
+    // 1) Set delete btns
+    this.deleteBtns = document.querySelectorAll(".workout__btn-delete");
 
-    if (!this.deleteBtn) return;
-
-    this.deleteBtn.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        // 1) Get and save element by id
-        this.#workouts.forEach((work) => {
-          if (work.id === btn.closest(".workout").dataset.id) {
-            let curElement = btn.closest(".workout");
-
-            // 2) Get and save object by element id
-            this.#workouts.forEach((work) => {
-              if (work.id === curElement.dataset.id) {
-                let curWork = work;
-
-                // 3) Check object index
-                this.#workIndex = this.#workouts.findIndex(
-                  (work) => work.id == curWork.id
-                );
-                // console.log(this.#workIndex);
-
-                // 4) Delete object from the array
-                this.#workouts.splice(this.#workIndex);
-                curElement.remove(); // delete the element HTML
-
-                // 5) Remove the workout's marker
-                this.#markerGroup.forEach((marker) => {
-                  this.#map.removeLayer(marker);
-                });
-
-                this.#workouts.forEach((work) => {
-                  this._renderWorkoutMarker(work);
-                });
-
-                // 7) Re-set the local storage
-                localStorage.clear();
-                this._setLocalStorage();
-              }
-            });
-          }
-        });
+    if (!this.deleteBtns) return;
+    else
+      this.deleteBtns.forEach((btn) => {
+        btn.addEventListener("click", this._setDeleteElements.bind(this));
       });
+  }
+
+  _setDeleteElements(e) {
+    // 2) Get and save workout element
+    this.#curElementDelete = e.target.closest(".workout");
+
+    // 3) Get and save workout object
+    this.#workouts.forEach((work) => {
+      if (work.id === this.#curElementDelete.dataset.id) {
+        this.#curWorkDelete = work;
+      }
+    });
+    this._delete();
+  }
+
+  _delete() {
+    console.log(this.#workouts);
+    console.log(this.#curWorkDelete);
+    // 4) Delete workout
+    this.#curElementDelete.remove(); // remove workout element
+
+    this.#workouts = this.#workouts.filter(
+      (workout) => workout.id !== this.#curWorkDelete.id
+    );
+
+    // 5) Re-set the local storage
+    localStorage.clear();
+    this._setLocalStorage();
+
+    // 5) Re-set workouts markers
+    this.#markerGroup.forEach((marker) => {
+      this.#map.removeLayer(marker);
+    });
+
+    this.#workouts.forEach((work) => {
+      this._renderWorkoutMarker(work);
     });
   }
+
+  ///////
 
   _edit() {
     this.editBtn = document.querySelectorAll(".workout__btn-edit");
