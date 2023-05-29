@@ -82,9 +82,10 @@ let map,
   mapEvent,
   sortCondition,
   markerGroup,
-  workIndex,
   curWorkDelete,
-  curElementDelete;
+  curElementDelete,
+  curWorkEdit,
+  curElementEdit;
 
 //////////////////////////////////////////////
 // APPLICATION ARCHITECTURE
@@ -94,9 +95,10 @@ class App {
   #mapEvent;
   #workouts = [];
   #markerGroup = [];
-  #workIndex;
   #curWorkDelete;
   #curElementDelete;
+  #curWorkEdit;
+  #curElementEdit;
 
   // We call it when the page loads:
   constructor() {
@@ -116,8 +118,7 @@ class App {
     logo.addEventListener("click", this._hideForm);
 
     window.addEventListener("load", this._setDeleteButtons.bind(this));
-
-    window.addEventListener("load", this._edit.bind(this));
+    window.addEventListener("load", this._setEditButtons.bind(this));
   }
 
   _getPosition() {
@@ -176,7 +177,7 @@ class App {
       inputElevation.closest(".form__row").classList.add("form__row--hidden");
     }
 
-    this.editBtn.forEach((btn) => {
+    this.editBtns.forEach((btn) => {
       btn.style.display = "none";
     });
   }
@@ -193,7 +194,7 @@ class App {
     form.classList.add("hidden");
     setTimeout(() => (form.style.display = "grid"), 1000);
 
-    this.editBtn.forEach((btn) => {
+    this.editBtns.forEach((btn) => {
       btn.style.display = "block";
     });
   }
@@ -268,7 +269,7 @@ class App {
     //console.log(JSON.stringify(this.#workouts));
 
     this._setDeleteButtons();
-    this._edit();
+    this._setEditButtons();
   }
 
   _renderWorkoutMarker(workout) {
@@ -457,8 +458,6 @@ class App {
   }
 
   _delete() {
-    console.log(this.#workouts);
-    console.log(this.#curWorkDelete);
     // 4) Delete workout
     this.#curElementDelete.remove(); // remove workout element
 
@@ -480,9 +479,48 @@ class App {
     });
   }
 
-  ///////
+  ///////// Edit buttons
+  _setEditButtons() {
+    // 1) Set edit btns
+    this.editBtns = document.querySelectorAll(".workout__btn-edit");
+
+    if (!this.editBtns) return;
+    else
+      this.editBtns.forEach((btn) => {
+        btn.addEventListener("click", this._setEditElements.bind(this));
+      });
+  }
+
+  _setEditElements(e) {
+    // 2) Get and save workout element
+    this.#curElementEdit = e.target.closest(".workout");
+
+    // 3) Get and save workout object
+    this.#workouts.forEach((work) => {
+      if (work.id === this.#curElementEdit.dataset.id) {
+        this.#curWorkEdit = work;
+      }
+    });
+    this._edit();
+  }
 
   _edit() {
+    this._showForm();
+    // remove workout element:
+    this.#curElementEdit.remove();
+    // remove workout object:
+    this.#workouts = this.#workouts.filter(
+      (workout) => workout.id !== this.#curWorkEdit.id
+    );
+
+    this.#mapEvent = {
+      latlng: {
+        lat: this.#curWorkEdit.coords[0],
+        lng: this.#curWorkEdit.coords[1],
+      },
+    };
+
+    /*
     this.editBtn = document.querySelectorAll(".workout__btn-edit");
 
     if (!this.editBtn) return;
@@ -540,6 +578,7 @@ class App {
         });
       });
     });
+    */
   }
 
   _showError() {
