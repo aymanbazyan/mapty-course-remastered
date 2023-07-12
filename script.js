@@ -78,14 +78,7 @@ class Cycling extends Workout {
 //const run1 = new Running([39, -12], 5.2, 25, 140);
 //const cycle1 = new Cycling([39, -12], 27, 95, 540);
 
-let map,
-  mapEvent,
-  sortCondition,
-  markerGroup,
-  curWorkDelete,
-  curElementDelete,
-  curWorkEdit,
-  curElementEdit;
+let map, mapEvent, sortCondition, markerGroup, curWork, curElement;
 
 //////////////////////////////////////////////
 // APPLICATION ARCHITECTURE
@@ -95,10 +88,8 @@ class App {
   #mapEvent;
   #workouts = [];
   #markerGroup = [];
-  #curWorkDelete;
-  #curElementDelete;
-  #curWorkEdit;
-  #curElementEdit;
+  #curWork;
+  #curElement;
 
   // We call it when the page loads:
   constructor() {
@@ -432,7 +423,7 @@ class App {
     workoutsContainer.innerHTML = "";
   }
 
-  /////// Delete button
+  //////////////////////////////////////////// Delete button
   _setDeleteButtons() {
     // 1) Set delete btns
     this.deleteBtns = document.querySelectorAll(".workout__btn-delete");
@@ -446,12 +437,12 @@ class App {
 
   _setDeleteElements(e) {
     // 2) Get and save workout element
-    this.#curElementDelete = e.target.closest(".workout");
+    this.#curElement = e.target.closest(".workout");
 
     // 3) Get and save workout object
     this.#workouts.forEach((work) => {
-      if (work.id === this.#curElementDelete.dataset.id) {
-        this.#curWorkDelete = work;
+      if (work.id === this.#curElement.dataset.id) {
+        this.#curWork = work;
       }
     });
     this._delete();
@@ -459,10 +450,10 @@ class App {
 
   _delete() {
     // 4) Delete workout
-    this.#curElementDelete.remove(); // remove workout element
+    this.#curElement.remove(); // remove workout element
 
     this.#workouts = this.#workouts.filter(
-      (workout) => workout.id !== this.#curWorkDelete.id
+      (workout) => workout.id !== this.#curWork.id
     );
 
     // 5) Re-set the local storage
@@ -470,16 +461,10 @@ class App {
     this._setLocalStorage();
 
     // 5) Re-set workouts markers
-    this.#markerGroup.forEach((marker) => {
-      this.#map.removeLayer(marker);
-    });
-
-    this.#workouts.forEach((work) => {
-      this._renderWorkoutMarker(work);
-    });
+    this._resetMarkers();
   }
 
-  ///////// Edit buttons
+  ///////////////////////////////////////////////// Edit buttons
   _setEditButtons() {
     // 1) Set edit btns
     this.editBtns = document.querySelectorAll(".workout__btn-edit");
@@ -493,32 +478,48 @@ class App {
 
   _setEditElements(e) {
     // 2) Get and save workout element
-    this.#curElementEdit = e.target.closest(".workout");
+    this.#curElement = e.target.closest(".workout");
 
     // 3) Get and save workout object
     this.#workouts.forEach((work) => {
-      if (work.id === this.#curElementEdit.dataset.id) {
-        this.#curWorkEdit = work;
+      if (work.id === this.#curElement.dataset.id) {
+        this.#curWork = work;
       }
     });
     this._edit();
   }
 
   _edit() {
+    // 4) change the workouts list
     this._showForm();
     // remove workout element:
-    this.#curElementEdit.remove();
+    this.#curElement.remove();
     // remove workout object:
     this.#workouts = this.#workouts.filter(
-      (workout) => workout.id !== this.#curWorkEdit.id
+      (workout) => workout.id !== this.#curWork.id
     );
+    // 5) Re-set workouts markers
+    this._resetMarkers();
 
     this.#mapEvent = {
       latlng: {
-        lat: this.#curWorkEdit.coords[0],
-        lng: this.#curWorkEdit.coords[1],
+        lat: this.#curWork.coords[0],
+        lng: this.#curWork.coords[1],
       },
     };
+
+    // 6) Fill the form with the current workout to edit
+    inputType.value = this.#curWork.type;
+    inputDistance.value = this.#curWork.distance;
+    inputDuration.value = this.#curWork.duration;
+
+    if (inputElevation.value > 0) {
+      inputElevation.value = this.#curWork.elevation;
+    } else inputElevation.value = "";
+
+    if (inputCadence.value > 0) {
+      inputCadence.value = this.#curWork.cadence;
+    } else inputCadence.value = "";
 
     /*
     this.editBtn = document.querySelectorAll(".workout__btn-edit");
@@ -585,6 +586,16 @@ class App {
     error.classList.remove("hidden");
 
     setTimeout(() => error.classList.add("hidden"), 3500);
+  }
+
+  _resetMarkers() {
+    this.#markerGroup.forEach((marker) => {
+      this.#map.removeLayer(marker);
+    });
+
+    this.#workouts.forEach((work) => {
+      this._renderWorkoutMarker(work);
+    });
   }
 }
 
