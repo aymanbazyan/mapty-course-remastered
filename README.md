@@ -1,1 +1,0 @@
-# mapty-course-remastered
